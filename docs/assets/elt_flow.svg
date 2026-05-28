@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="300" viewBox="0 0 1180 300" role="img" aria-labelledby="title desc">
+  <title id="title">Batch ELT Flow</title>
+  <desc id="desc">Sequence of ELT tasks from data generation through BI smoke checks.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7c3aed"/></marker>
+    <style>
+      text {font-family: Inter, Arial, sans-serif; fill:#111827;}
+      .step {fill:#f5f3ff; stroke:#7c3aed; stroke-width:2; rx:12;}
+      .label {font-size:15px; font-weight:700;}
+      .small {font-size:12px; fill:#4b5563;}
+      .line {stroke:#7c3aed; stroke-width:2.2; marker-end:url(#arrow); fill:none;}
+    </style>
+  </defs>
+  <rect width="1180" height="300" fill="#ffffff"/>
+  <text x="36" y="42" style="font-size:24px;font-weight:700;">Retail Batch ELT Flow</text>
+  <g transform="translate(30,90)">
+    <rect width="125" height="88" class="step"/><text x="24" y="34" class="label">Generate</text><text x="18" y="58" class="small">synthetic CSVs</text>
+  </g>
+  <g transform="translate(185,90)">
+    <rect width="125" height="88" class="step"/><text x="26" y="34" class="label">Validate</text><text x="22" y="58" class="small">file contracts</text>
+  </g>
+  <g transform="translate(340,90)">
+    <rect width="125" height="88" class="step"/><text x="35" y="34" class="label">Load</text><text x="18" y="58" class="small">raw + audit</text>
+  </g>
+  <g transform="translate(495,90)">
+    <rect width="125" height="88" class="step"/><text x="32" y="34" class="label">dbt run</text><text x="22" y="58" class="small">build marts</text>
+  </g>
+  <g transform="translate(650,90)">
+    <rect width="125" height="88" class="step"/><text x="30" y="34" class="label">dbt test</text><text x="16" y="58" class="small">quality gates</text>
+  </g>
+  <g transform="translate(805,90)">
+    <rect width="125" height="88" class="step"/><text x="29" y="34" class="label">dbt docs</text><text x="17" y="58" class="small">metadata site</text>
+  </g>
+  <g transform="translate(960,90)">
+    <rect width="170" height="88" class="step"/><text x="36" y="34" class="label">Metabase BI</text><text x="24" y="58" class="small">provision + smoke</text>
+  </g>
+  <path d="M155 134 L185 134" class="line"/><path d="M310 134 L340 134" class="line"/><path d="M465 134 L495 134" class="line"/><path d="M620 134 L650 134" class="line"/><path d="M775 134 L805 134" class="line"/><path d="M930 134 L960 134" class="line"/>
+  <text x="36" y="242" class="small">Airflow DAG retail_batch_elt orchestrates through dbt docs generation. Metabase provisioning is a post-ELT Make target once marts exist.</text>
+</svg>

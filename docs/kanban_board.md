@@ -1,27 +1,53 @@
-# Sprint 1 Kanban Board
+# Project Sprint Status
+
+This document summarizes completed implementation scope for the local retail analytics warehouse.
 
 ## Done
 
-- Card 1: Create local project skeleton
-- Card 2: Create Python dependencies
-- Card 3: Define local environment variables
-- Card 4: Create Docker Compose local stack
-- Card 5: Create PostgreSQL schemas
-- Card 6: Create audit tables
-- Card 7: Create raw tables
-- Card 8: Build synthetic retail data generator
-- Card 9: Build source file validator
-- Card 10: Build raw CSV loader
-- Card 11: Create Makefile commands
-- Card 12: Write Sprint 1 documentation
+### Sprint 1: Local foundation and raw ingestion
 
-## Sprint 1 Definition of Done
+- Docker Compose stack for PostgreSQL, Airflow, and Metabase.
+- PostgreSQL schemas: `raw`, `staging`, `intermediate`, `marts`, `audit`.
+- Raw source tables for synthetic retail CSV data.
+- Synthetic retail data generator.
+- Source file validator.
+- Raw CSV loader with batch/file audit records.
+- Makefile developer commands.
+- Pytest coverage for generator and validator behavior.
 
-- Project folder exists at `/home/asq/retail-analytics-warehouse`
-- Tests cover generator and validator behavior
-- Synthetic CSV files can be generated
-- Source files can be validated
-- PostgreSQL schemas and raw tables are defined
-- Raw loader records audit metadata
-- Docker Compose defines PostgreSQL, Airflow, and Metabase
-- README and docs describe local operation
+### Sprint 2: dbt warehouse models
+
+- dbt project under `dbt/retail_warehouse`.
+- Raw source definitions and staging models for every raw table.
+- Intermediate sales/order item business logic models.
+- Marts dimensions and facts in the `marts` schema.
+- dbt schema tests and custom order-total business-rule test.
+
+### Sprint 3: Airflow full ELT orchestration
+
+- `retail_batch_elt` DAG for generation, validation, raw load, dbt debug/run/test, and dbt docs generation.
+- Container-safe dbt profile/project execution against the Docker Compose `postgres` service.
+- Make targets for listing, testing, triggering, and unpausing the DAG.
+
+### Sprint 4: Metabase BI dashboards
+
+- Dashboard and metric catalog in `docs/bi_dashboard_catalog.md`.
+- Idempotent Metabase API provisioning in `scripts/provision_metabase.py`.
+- `Retail Analytics` collection with executive, product/category, store/channel, customer, returns/refunds, and inventory health dashboards.
+- Make targets for provisioning and API smoke verification.
+
+### Sprint 5: Documentation polish and portfolio assets
+
+- README rewritten as a portfolio overview and quickstart.
+- Documentation landing page, case study, evaluator walkthrough, and visual assets.
+- Existing architecture, data model, pipeline, runbook, and BI docs aligned to current scope.
+- Documentation link/asset validation added to pytest.
+
+## Definition of Done
+
+- Project runs locally through Docker Compose.
+- Python tests pass with `python -m pytest tests -q`.
+- Docker Compose configuration validates with `docker compose config`.
+- The Airflow DAG can run the complete ELT path through `make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01` when services are running.
+- Metabase assets can be provisioned and smoke-checked with `make metabase-provision` and `make metabase-smoke` after marts exist.
+- README and docs present an honest local-only portfolio package without claiming production/cloud scope.

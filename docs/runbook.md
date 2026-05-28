@@ -1,5 +1,18 @@
 # Runbook
 
+## Prerequisites
+
+- Python with `pip`.
+- Docker and Docker Compose.
+- Make.
+- Access to the Docker daemon. In this Hermes shell, Docker commands may require `sg docker -c '<command>'`.
+
+Install host dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
 ## Start Services
 
 `make up` builds the local `retail-airflow:local` image from `airflow/Dockerfile`. Airflow installs only `airflow/requirements.txt` under Apache Airflow constraints, keeping container dependencies isolated from host/dev `requirements.txt`.
@@ -19,6 +32,8 @@ make down
 ```bash
 make reset
 ```
+
+`make reset` runs `docker compose down -v` and then starts services again. This deletes local PostgreSQL and Metabase Docker volume state.
 
 ## Generate Source Data
 
@@ -47,15 +62,32 @@ make raw-pipeline
 ## Run Tests
 
 ```bash
+python -m pytest tests -q
+```
+
+Equivalent Make target:
+
+```bash
 make test
+```
+
+## Validate Docker Compose
+
+```bash
+docker compose config
+```
+
+If Docker permissions require group switching:
+
+```bash
+sg docker -c 'docker compose config'
 ```
 
 ## Run dbt Warehouse Models
 
-Install Python dependencies and start/load PostgreSQL first:
+Start/load PostgreSQL first:
 
 ```bash
-python -m pip install -r requirements.txt
 make up
 make raw-pipeline
 ```
@@ -76,13 +108,15 @@ dbt run --profiles-dir ./dbt/retail_warehouse --project-dir ./dbt/retail_warehou
 
 ## Verify PostgreSQL Data
 
-After `make up` and `make load-raw`, connect to PostgreSQL and run:
+After a raw load or full DAG run, connect to PostgreSQL and run:
 
 ```sql
 select count(*) from raw.orders;
 select count(*) from raw.order_items;
 select * from audit.batch_runs order by started_at desc limit 1;
 select * from audit.file_loads order by loaded_at desc limit 9;
+select count(*) from marts.fct_sales;
+select count(*) from marts.dim_customers;
 ```
 
 ## Airflow
@@ -99,13 +133,13 @@ Default local credentials:
 admin / admin
 ```
 
-The Sprint 3 DAG (`retail_batch_elt`) runs the full local ELT path:
+The `retail_batch_elt` DAG runs the full local ELT path:
 
 ```text
 start -> generate_retail_data -> validate_source_files -> load_raw_to_postgres -> dbt_debug -> dbt_run -> dbt_test -> dbt_docs_generate -> end
 ```
 
-Airflow mounts the repository at `/opt/airflow/project`. DAG runs use `/tmp/retail-analytics-warehouse/raw` as the container-local writable landing path for generated CSV files, so Airflow does not need write access to the host-owned `data/raw` directory. The dbt tasks run with `DBT_PROFILES_DIR=/opt/airflow/project/dbt/retail_warehouse`, `--project-dir /opt/airflow/project/dbt/retail_warehouse`, `--profiles-dir /opt/airflow/project/dbt/retail_warehouse`, and `--target docker`, which uses the Docker-network `postgres` hostname. dbt logs and compiled artifacts are written under `/tmp/retail-analytics-warehouse/dbt-logs` and `/tmp/retail-analytics-warehouse/dbt-target` inside the container to avoid host/container ownership conflicts in the bind-mounted repository.
+Airflow mounts the repository at `/opt/airflow/project`. DAG runs use `/tmp/retail-analytics-warehouse/raw` as the container-local writable landing path for generated CSV files. The dbt tasks run with `DBT_PROFILES_DIR=/opt/airflow/project/dbt/retail_warehouse`, `--project-dir /opt/airflow/project/dbt/retail_warehouse`, `--profiles-dir /opt/airflow/project/dbt/retail_warehouse`, and `--target docker`, which uses the Docker-network `postgres` hostname. dbt logs and compiled artifacts are written under `/tmp/retail-analytics-warehouse/dbt-logs` and `/tmp/retail-analytics-warehouse/dbt-target` inside the container.
 
 Headless Airflow checks and runs:
 
@@ -123,7 +157,7 @@ make airflow-trigger
 make airflow-logs
 ```
 
-If this Hermes session cannot access Docker directly, wrap service commands with the Docker group helper:
+If this shell cannot access Docker directly, wrap service commands with the Docker group helper:
 
 ```bash
 sg docker -c 'make up'
@@ -183,9 +217,7 @@ Expected Metabase assets:
 - Dashboards: `Executive Sales Overview`, `Product and Category Performance`, `Store and Channel Performance`, `Customer Behavior`, `Returns and Refunds`, `Inventory Health`
 - Cards include `Executive KPI Summary`, `Daily Net Sales Trend`, `Category Revenue and Margin`, `Top Products by Revenue`, `Store Channel Sales`, `Customer Lifetime Value Leaders`, `Return Rate Summary`, `Restock Risk by Store`, and `Low Stock Products`
 
-The provisioning script is idempotent by asset name. Reruns update existing database/card/dashboard metadata and add any missing dashboard-card links instead of creating unbounded duplicates. This workflow was verified with `metabase/metabase:latest` resolving locally to Metabase `v0.61.3`.
-
-Metabase connects to PostgreSQL from inside Docker using host `postgres`. Host scripts call Metabase at `http://localhost:3000`.
+The provisioning script is idempotent by asset name. Reruns update existing database/card/dashboard metadata and add missing dashboard-card links instead of creating unbounded duplicates. Metabase connects to PostgreSQL from inside Docker using host `postgres`. Host scripts call Metabase at `http://localhost:3000`.
 
 Useful environment overrides:
 
@@ -209,6 +241,10 @@ select count(*) as row_count from marts.dim_customers;
 ```
 
 To reset Metabase local state, run `make metabase-reset-note` for the reminder or reset Docker volumes with `docker compose down -v` / `make reset`. This deletes the local Metabase application database and requires provisioning again.
+
+## Portfolio Demo Path
+
+For a clean demo, follow [project_walkthrough.md](project_walkthrough.md): test, validate Compose, run the Airflow DAG, provision Metabase, smoke-check BI, inspect dashboards, and shut down.
 
 ## Troubleshooting
 

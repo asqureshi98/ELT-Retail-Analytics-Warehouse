@@ -2,82 +2,96 @@
 
 ## Overview
 
-This project implements a local batch ELT retail analytics warehouse.
+This project implements a local batch ELT retail analytics warehouse. It is designed as a portfolio-friendly data platform that can be reviewed on a developer machine without cloud services.
 
-## Sprint 1 Architecture
+![Architecture overview](assets/architecture.svg)
+
+## End-to-End Flow
 
 ```text
-Python Faker Generator
-        |
-        v
-Local CSV Landing Zone: data/raw/
-        |
-        v
-Source Validator
-        |
-        v
-Raw CSV Loader
-        |
-        v
-PostgreSQL raw schema + audit schema
+Python synthetic data generator
+  -> local CSV landing zone
+  -> source validation
+  -> raw PostgreSQL load + audit metadata
+  -> dbt staging/intermediate/marts models + tests
+  -> Airflow full ELT orchestration
+  -> Metabase dashboards provisioned by API
 ```
 
 ## Local Services
 
 Docker Compose runs:
 
-- `postgres`: warehouse database
-- `airflow-webserver`: local orchestration UI
-- `airflow-scheduler`: DAG scheduler
-- `metabase`: dashboard UI
+| Service | Purpose | Port |
+| --- | --- | --- |
+| `postgres` | PostgreSQL 16 warehouse database | `5432` |
+| `airflow-webserver` | Airflow UI and CLI target for local checks | `8080` |
+| `airflow-scheduler` | Airflow DAG scheduler | internal |
+| `metabase` | BI dashboard UI and API | `3000` |
 
-## Schemas
+Airflow uses a project image, `retail-airflow:local`, built from `airflow/Dockerfile` and `airflow/requirements.txt`.
+
+## Warehouse Schemas
 
 PostgreSQL initializes these schemas:
 
-- `raw`: source-shaped loaded CSV tables
-- `staging`: future dbt cleaned models
-- `intermediate`: future dbt business logic models
-- `marts`: future facts and dimensions
-- `audit`: batch and file load metadata
+- `raw`: source-shaped loaded CSV tables.
+- `staging`: dbt views for type cleanup and source normalization.
+- `intermediate`: dbt views for reusable business logic.
+- `marts`: dbt dimension and fact tables for analytics consumption.
+- `audit`: batch and file load metadata.
 
-## Sprint 2 Architecture
+## Runtime Paths
 
-Sprint 2 extends the pipeline with dbt Core transformations:
+Host-side commands use:
+
+- CSV landing zone: `data/raw/`.
+- dbt project: `dbt/retail_warehouse`.
+- dbt profile default host: `localhost`.
+
+Airflow container tasks use:
+
+- Repository mount: `/opt/airflow/project`.
+- Writable generated CSV path: `/tmp/retail-analytics-warehouse/raw`.
+- dbt project/profile path: `/opt/airflow/project/dbt/retail_warehouse`.
+- dbt target: `docker`, which connects to PostgreSQL hostname `postgres`.
+- dbt logs/artifacts: `/tmp/retail-analytics-warehouse/dbt-logs` and `/tmp/retail-analytics-warehouse/dbt-target`.
+
+## Layered Architecture
 
 ```text
-Python Faker Generator
-        |
-        v
-Local CSV Landing Zone: data/raw/
-        |
-        v
-Source Validator
-        |
-        v
-Raw CSV Loader
-        |
-        v
-PostgreSQL raw schema + audit schema
-        |
-        v
-dbt Core (Sprint 2)
-  staging views (type cleanup)
-        |
-        v
-  intermediate views (business logic)
-        |
-        v
-  marts tables (dimensions + facts)
+Source layer
+  Python Faker generator creates nine CSV files.
+
+Ingestion layer
+  validate_source_files.py checks file contracts.
+  load_raw_to_postgres.py truncates and reloads raw tables.
+  audit.batch_runs and audit.file_loads capture load metadata.
+
+Transformation layer
+  dbt staging views cast types and normalize source values.
+  dbt intermediate views centralize reusable order and margin logic.
+  dbt marts tables expose facts and dimensions for BI.
+
+Orchestration layer
+  Airflow DAG retail_batch_elt runs generation, validation, load, dbt debug/run/test, and dbt docs generation.
+
+BI layer
+  scripts/provision_metabase.py creates or updates the Metabase database connection, collection, cards, and dashboards.
 ```
 
 ## Design Decisions
 
-- PostgreSQL only for MVP to keep local operation simple.
-- Local CSV files are used before adding MinIO/S3 simulation.
-- Raw loads use truncate-and-reload for deterministic local development.
-- Audit tables track raw file load row counts and batch status.
-- Airflow is included in Sprint 1 with a raw pipeline DAG; dbt orchestration comes in Sprint 3.
-- dbt staging and intermediate layers are materialised as views to avoid redundant storage.
-- dbt mart dimension and fact tables are materialised as tables for query performance.
-- The `generate_schema_name` macro overrides the default dbt behaviour so models land in `staging`, `intermediate`, and `marts` rather than prefixed names like `staging_staging`.
+- PostgreSQL is the only warehouse engine to keep local setup simple.
+- Local CSV files represent upstream extracts without introducing S3/MinIO/cloud dependencies.
+- Raw loads use truncate-and-reload for deterministic local demos.
+- Raw tables stay source-shaped; business logic is implemented in dbt.
+- Staging and intermediate dbt models are views to avoid redundant local storage.
+- Mart dimensions and facts are tables for BI query performance.
+- The dbt `generate_schema_name` macro prevents duplicated schema prefixes and lands models in `staging`, `intermediate`, and `marts`.
+- Airflow runs dbt inside the Docker network with the `docker` dbt target.
+- Metabase provisioning is idempotent by asset name to avoid manual dashboard drift.
+
+## Current Completion Status
+
+Sprints 1-5 are implemented for the local portfolio scope: foundation/raw ingestion, dbt marts, Airflow orchestration, Metabase dashboards, and documentation/assets polish.

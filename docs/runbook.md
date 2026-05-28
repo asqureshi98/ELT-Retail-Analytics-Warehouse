@@ -2,6 +2,8 @@
 
 ## Start Services
 
+`make up` builds the local `retail-airflow:local` image from `airflow/Dockerfile`. Airflow installs only `airflow/requirements.txt` under Apache Airflow constraints, keeping container dependencies isolated from host/dev `requirements.txt`.
+
 ```bash
 make up
 ```
@@ -129,6 +131,6 @@ python scripts/validate_source_files.py --input-dir data/raw
 
 Read the listed missing file, missing column, relationship, or numeric-rule error.
 
-### Airflow starts slowly
+### Airflow dependency conflicts
 
-The MVP compose file installs Python/dbt packages at Airflow container startup. This is acceptable for local Sprint 1, but Sprint 3 should replace it with a custom Airflow image.
+Airflow uses a dedicated Docker image built from `airflow/Dockerfile` and `airflow/requirements.txt`. Do not install the top-level `requirements.txt` in Airflow containers; it is for host/dev tooling and can pin versions that conflict with Apache Airflow constraints.

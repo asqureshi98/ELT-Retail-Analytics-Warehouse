@@ -26,7 +26,7 @@ Sprint 2 adds dbt Core warehouse modeling:
 ## Tech Stack
 
 - PostgreSQL 16
-- Apache Airflow 2.9.1 Python 3.11 image
+- Apache Airflow 2.9.1 Python 3.11 image with isolated Airflow runtime dependencies
 - Metabase latest
 - Python, pandas, Faker, psycopg2
 - dbt Core with the dbt-postgres adapter
@@ -43,7 +43,7 @@ make generate-data
 make validate-data
 ```
 
-To start local services:
+To start local services (builds the project Airflow image with dependencies from `airflow/requirements.txt`):
 
 ```bash
 make up

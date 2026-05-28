@@ -1,0 +1,9 @@
+.git
+.venv
+__pycache__
+.pytest_cache
+*.pyc
+.env
+data/raw/*.csv
+dbt/retail_warehouse/target
+dbt/retail_warehouse/logs

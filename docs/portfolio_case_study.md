@@ -11,7 +11,7 @@ This project builds a local, reproducible analytics warehouse that starts with g
 - Demonstrate a complete modern batch ELT workflow on a laptop.
 - Keep every service local and reproducible through Docker Compose.
 - Separate ingestion, transformation, orchestration, and BI concerns.
-- Make data quality visible through validation scripts, audit tables, dbt tests, and smoke checks.
+- Make data quality visible through validation scripts, audit tables, dbt tests, warehouse quality checks, and smoke checks.
 - Provide a portfolio package that reviewers can inspect without private credentials or cloud accounts.
 
 ## Architecture Decisions
@@ -24,6 +24,7 @@ This project builds a local, reproducible analytics warehouse that starts with g
 | dbt staging/intermediate/marts layers | Encodes transformation semantics and testable warehouse contracts. |
 | Airflow LocalExecutor in Docker Compose | Demonstrates orchestration without managed infrastructure. |
 | Metabase API provisioning | Makes BI setup repeatable and reviewable in code. |
+| Explicit local hardening assets | Adds quality observability, idempotent indexes, and SCD2 readiness without adding cloud/Spark/Kafka/Kubernetes scope. |
 | SVG/Markdown assets | Keeps portfolio diagrams lightweight and renderable on GitHub. |
 
 ![ELT flow](assets/elt_flow.svg)
@@ -55,8 +56,9 @@ Quality gates are layered:
 2. Raw load audit tables record batch and file-level row counts.
 3. dbt schema tests validate uniqueness, not-null constraints, accepted values, and relationships.
 4. A custom dbt business-rule test checks order totals.
-5. Metabase smoke checks verify BI objects and representative marts queries through the Metabase API.
-6. Pytest verifies core scripts, DAG structure, provisioning definitions, and documentation links/assets.
+5. The Sprint 6 warehouse quality script checks post-ELT row counts, revenue sanity, order/item reconciliation, returns/refunds, key uniqueness/nulls, audit state, and inventory sanity.
+6. Metabase smoke checks verify BI objects and representative marts queries through the Metabase API.
+7. Pytest verifies core scripts, DAG structure, provisioning definitions, warehouse quality evaluation logic, and documentation links/assets.
 
 ## BI Outcomes
 
@@ -73,7 +75,7 @@ These dashboards answer operational questions around revenue, refunds, margin, s
 
 ## Trade-offs
 
-- Truncate/reload ingestion favors deterministic demos over incremental history.
+- Truncate/reload ingestion favors deterministic demos over full incremental history, though a customer dbt snapshot example documents SCD2 readiness.
 - Synthetic data makes the repository safe to publish but does not capture all real-world retail irregularities.
 - PostgreSQL is sufficient for local analytics but is not a cloud-scale warehouse substitute.
 - Metabase dashboard layout is intentionally simple and API-driven rather than hand-polished in the UI.
@@ -81,14 +83,14 @@ These dashboards answer operational questions around revenue, refunds, margin, s
 
 ## Limitations
 
-This project does not implement production deployment, cloud storage, managed Airflow, CI/CD, SCD2 dimensions, streaming ingestion, autoscaling, high availability, or production secret management. Those are intentionally outside the local portfolio scope.
+This project does not implement production deployment, cloud storage, managed Airflow, production CI/CD, streaming ingestion, autoscaling, high availability, or production secret management. Incremental dbt models, broader SCD2 coverage, Great Expectations, lineage, and cloud migration are documented in [hardening_roadmap.md](hardening_roadmap.md) rather than claimed as production-ready features.
 
 ## Extension Roadmap
 
 Potential future increments:
 
-1. Add CI that runs pytest, dbt parse, and documentation link checks.
-2. Add incremental dbt models and SCD2 customer/product dimensions.
+1. Add production CI that runs pytest, dbt parse, documentation link checks, and Docker Compose validation.
+2. Expand incremental dbt models and SCD2 snapshots beyond the implemented customer snapshot example.
 3. Add Great Expectations or dbt-expectations for richer data contracts.
 4. Add a cloud variant using object storage, managed orchestration, and a warehouse service.
 5. Add seeded anomaly scenarios to stress-test quality gates and dashboard alerts.
@@ -96,4 +98,4 @@ Potential future increments:
 
 ## Result
 
-The completed Sprint 5 package is a coherent portfolio artifact: code, orchestration, BI, tests, runbook, diagrams, walkthrough, and honest limitations are all visible from the README and docs index.
+The completed Sprint 6 package is a coherent portfolio artifact: code, orchestration, BI, tests, hardening checks, runbook, diagrams, walkthrough, and honest limitations are all visible from the README and docs index.

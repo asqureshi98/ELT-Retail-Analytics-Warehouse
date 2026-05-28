@@ -119,6 +119,43 @@ select count(*) from marts.fct_sales;
 select count(*) from marts.dim_customers;
 ```
 
+## Sprint 6 Hardening Checks
+
+After raw tables and dbt marts exist, run the local hardening gate:
+
+```bash
+make hardening-check
+```
+
+This target applies idempotent indexes from `warehouse/hardening/004_create_performance_indexes.sql` and runs `scripts/warehouse_quality_checks.py`. The quality script prints a human-readable status line plus JSON details for local automation. It checks row-count presence, revenue sanity, order-item reconciliation, return/refund sanity, duplicate/null key conditions, audit load state, and inventory quantity sanity.
+
+Useful standalone commands:
+
+```bash
+make apply-indexes
+make verify-indexes
+make warehouse-quality
+python scripts/warehouse_quality_checks.py --json-only --pretty-json
+```
+
+Connection overrides use the same local PostgreSQL variables as other host tools: `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`. Inside Docker-networked contexts use `POSTGRES_HOST=postgres`; from the host use `POSTGRES_HOST=localhost`.
+
+`make quality-check` is the service-free gate for pytest. It does not require PostgreSQL to be running:
+
+```bash
+make quality-check
+```
+
+## dbt Customer Snapshot Example
+
+Sprint 6 includes a small SCD Type 2 readiness example in `dbt/retail_warehouse/snapshots/snap_customers.sql`. It is intentionally not part of the default Airflow DAG yet. Run it explicitly after raw customers exist:
+
+```bash
+make dbt-snapshot
+```
+
+See [hardening_roadmap.md](hardening_roadmap.md) for implemented hardening scope and future extensions.
+
 ## Airflow
 
 Open:

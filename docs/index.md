@@ -9,8 +9,9 @@ Use this page as the documentation landing page for the completed local retail a
 | [Architecture](architecture.md) | Local services, end-to-end ELT flow, schema boundaries, design decisions |
 | [Data model](data_model.md) | Source entities, raw tables, dbt layers, dimensions, facts, and quality tests |
 | [Pipeline design](pipeline_design.md) | Batch pipeline steps, Airflow DAG, dbt execution, failure behavior |
-| [Runbook](runbook.md) | Commands for setup, operation, verification, and troubleshooting |
+| [Runbook](runbook.md) | Commands for setup, operation, verification, hardening checks, and troubleshooting |
 | [BI dashboard catalog](bi_dashboard_catalog.md) | Metabase dashboards, metrics, cards, representative SQL, provisioning behavior |
+| [Hardening roadmap](hardening_roadmap.md) | Sprint 6 quality checks, indexes, SCD2 snapshot example, and future advanced-DE extensions |
 | [Portfolio case study](portfolio_case_study.md) | Problem, goals, decisions, outcomes, trade-offs, and roadmap |
 | [Project walkthrough](project_walkthrough.md) | Step-by-step evaluator/demo path from clone to shutdown |
 | [Sprint status board](kanban_board.md) | Completed sprint scope and definition of done |
@@ -30,8 +31,10 @@ Use this page as the documentation landing page for the completed local retail a
 python -m pip install -r requirements.txt
 python -m pytest tests -q
 docker compose config
+make quality-check
 make up
 make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01
+make hardening-check
 make metabase-provision
 make metabase-smoke
 make down

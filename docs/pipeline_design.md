@@ -12,6 +12,7 @@ generate_retail_data.py
   -> dbt run
   -> dbt test
   -> dbt docs generate
+  -> warehouse hardening checks (host/local target)
   -> Metabase provision/smoke checks
 ```
 
@@ -66,6 +67,18 @@ make airflow-trigger
 make airflow-logs
 ```
 
+## Warehouse Hardening Checks
+
+Sprint 6 adds an explicit local hardening step after dbt tests. It is not currently embedded in the Airflow DAG; it remains a host/local gate so the existing DAG stays stable while the quality script's container contract is kept simple.
+
+```bash
+make hardening-check
+```
+
+The target applies idempotent PostgreSQL indexes and runs `scripts/warehouse_quality_checks.py`, which checks mart row counts, revenue sanity, order/item reconciliation, return/refund sanity, duplicate/null keys, audit state, and inventory quantities. The script emits JSON as well as a readable status line.
+
+`make dbt-snapshot` is available for the Sprint 6 customer SCD Type 2 snapshot example. It is optional and separate from the default truncate/reload demo path.
+
 ## Metabase BI Provisioning
 
 Once marts exist, the BI provisioning step creates or updates Metabase assets:
@@ -96,5 +109,6 @@ python scripts/generate_retail_data.py \
 - Raw loading exits non-zero on database or file load failure.
 - Failed loads update audit metadata where possible.
 - dbt commands exit non-zero when SQL, source references, relationships, accepted values, or custom business rules fail.
+- `make hardening-check` exits non-zero when warehouse quality checks fail or PostgreSQL is unavailable.
 - Airflow marks the DAG run or task failed when any command exits non-zero.
 - Metabase smoke checks exit non-zero when expected assets are missing or representative queries fail.

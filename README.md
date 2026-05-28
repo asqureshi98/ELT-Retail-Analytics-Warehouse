@@ -13,7 +13,7 @@ For hiring managers and data engineering reviewers, this repository shows the fu
 - dbt staging, intermediate, and marts layers with tests.
 - Airflow orchestration for the complete ELT flow.
 - Metabase dashboard provisioning and smoke verification through code.
-- Portfolio documentation that explains architecture, trade-offs, and demo steps.
+- Portfolio documentation that explains architecture, trade-offs, hardening scope, and demo steps.
 
 End-to-end flow:
 
@@ -33,7 +33,8 @@ Local CSV generation -> raw PostgreSQL -> dbt marts -> Airflow orchestration -> 
   - `marts` dimension and fact tables for analytics consumption.
 - Full Airflow DAG: generate data, validate, load raw tables, run dbt debug/run/test, and generate dbt docs.
 - Metabase API provisioning for six dashboards in a `Retail Analytics` collection.
-- Pytest coverage for generator, validator, Airflow DAG structure, Metabase provisioning definitions, and documentation links/assets.
+- Sprint 6 hardening: post-ELT warehouse quality checks, idempotent performance indexes, and a dbt customer snapshot example.
+- Pytest coverage for generator, validator, Airflow DAG structure, Metabase provisioning definitions, warehouse quality evaluation logic, and documentation links/assets.
 
 ## Tech Stack
 
@@ -45,7 +46,7 @@ Local CSV generation -> raw PostgreSQL -> dbt marts -> Airflow orchestration -> 
 | Transformations | dbt Core + dbt-postgres |
 | BI | Metabase |
 | App/scripts | Python, pandas, Faker, psycopg2 |
-| Quality | pytest, dbt tests, Metabase smoke checks |
+| Quality | pytest, dbt tests, warehouse quality checks, Metabase smoke checks |
 
 ## Repository Map
 
@@ -57,7 +58,7 @@ Local CSV generation -> raw PostgreSQL -> dbt marts -> Airflow orchestration -> 
 ├── docs/assets/              # Lightweight SVG/Markdown portfolio diagrams
 ├── scripts/                  # Data generation, validation, raw load, Metabase provisioning
 ├── tests/                    # Python and docs/link tests
-├── warehouse/init/           # PostgreSQL schema/table bootstrap SQL
+├── warehouse/                 # PostgreSQL bootstrap SQL and local hardening indexes
 ├── docker-compose.yml        # PostgreSQL, Airflow, Metabase stack
 ├── Makefile                  # Local developer commands
 └── README.md                 # Project overview and quickstart
@@ -112,6 +113,8 @@ For a non-Airflow path that still builds the warehouse and dashboards:
 make raw-pipeline
 make dbt-run
 make dbt-test
+make apply-indexes
+make warehouse-quality
 make metabase-provision
 make metabase-smoke
 ```
@@ -123,8 +126,10 @@ Use this checklist before presenting the project:
 ```bash
 python -m pytest tests -q
 docker compose config
+make quality-check
 make up
 make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01
+make hardening-check
 make metabase-provision
 make metabase-smoke
 make down
@@ -166,7 +171,8 @@ Use this project to discuss:
 - Why dbt business logic is separated across staging, intermediate, and marts layers.
 - How Airflow container paths and dbt profiles differ between host and Docker-network contexts.
 - How BI provisioning through an API avoids manual dashboard drift.
-- What is intentionally not implemented: cloud deployment, CI/CD, SCD2 history, streaming, real customer data, and production secrets management.
+- How Sprint 6 adds local quality observability and idempotent warehouse indexes without overengineering the stack.
+- What is intentionally not implemented: cloud deployment, production CI/CD, streaming, real customer data, and production secrets management. Advanced extensions are documented in [docs/hardening_roadmap.md](docs/hardening_roadmap.md).
 
 ## Interviewer Demo Script
 
@@ -175,10 +181,11 @@ Use this project to discuss:
 3. Run `python -m pytest tests -q` and `docker compose config`.
 4. Start services with `make up`.
 5. Run `make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01` to execute the ELT DAG.
-6. Run `make metabase-provision && make metabase-smoke`.
-7. Open Metabase and walk through the six dashboards.
-8. Show dbt models and docs explaining marts, tests, and trade-offs.
-9. Shut down with `make down`.
+6. Run `make hardening-check` to apply idempotent indexes and inspect warehouse quality output.
+7. Run `make metabase-provision && make metabase-smoke`.
+8. Open Metabase and walk through the six dashboards.
+9. Show dbt models, the customer snapshot example, and docs explaining marts, tests, and trade-offs.
+10. Shut down with `make down`.
 
 ## Completion Status
 
@@ -189,7 +196,8 @@ Implemented sprint scope:
 - Sprint 3: Airflow orchestration for the complete local ELT path.
 - Sprint 4: Metabase BI dashboard catalog, API provisioning, smoke verification.
 - Sprint 5: portfolio documentation polish, case study, evaluator walkthrough, docs landing page, and lightweight architecture/model assets.
+- Sprint 6: warehouse quality checks, local hardening Make targets, idempotent performance indexes, a dbt customer snapshot example, and an advanced extensions roadmap.
 
 ## Limitations and Honest Scope
 
-This is a local portfolio warehouse, not a production deployment. It uses synthetic data, development credentials, local Docker volumes, and truncate/reload batch processing. It does not implement cloud infrastructure, SCD2 history, streaming ingestion, CI/CD pipelines, workload autoscaling, high availability, or production-grade secret management.
+This is a local portfolio warehouse, not a production deployment. It uses synthetic data, development credentials, local Docker volumes, and truncate/reload batch processing. It now includes local hardening assets, but it does not implement cloud infrastructure, production CI/CD, streaming ingestion, workload autoscaling, high availability, or production-grade secret management. Incremental models, broader SCD2 coverage, Great Expectations, lineage, and cloud migration are documented as future extensions rather than claimed as completed production features.

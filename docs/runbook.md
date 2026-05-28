@@ -148,7 +148,67 @@ Open:
 http://localhost:3000
 ```
 
-Connect to PostgreSQL from inside Docker using host `postgres`.
+Sprint 4 provisions Metabase through the HTTP API. On first run, `make metabase-provision` completes local setup with development credentials, connects Metabase to PostgreSQL, creates the `Retail Analytics` collection, creates native SQL questions, and places them on dashboards.
+
+Default local Metabase credentials:
+
+```text
+email: admin@retail-analytics.local
+password: RetailLocalAdmin!2026
+```
+
+Provision and verify after the full ELT path has built dbt marts:
+
+```bash
+make up
+make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01
+make metabase-provision
+make metabase-smoke
+```
+
+Equivalent non-Airflow data path:
+
+```bash
+make raw-pipeline
+make dbt-run
+make dbt-test
+make metabase-provision
+make metabase-smoke
+```
+
+Expected Metabase assets:
+
+- Database: `Retail Warehouse`
+- Collection: `Retail Analytics`
+- Dashboards: `Executive Sales Overview`, `Product and Category Performance`, `Store and Channel Performance`, `Customer Behavior`, `Returns and Refunds`, `Inventory Health`
+- Cards include `Executive KPI Summary`, `Daily Net Sales Trend`, `Category Revenue and Margin`, `Top Products by Revenue`, `Store Channel Sales`, `Customer Lifetime Value Leaders`, `Return Rate Summary`, `Restock Risk by Store`, and `Low Stock Products`
+
+The provisioning script is idempotent by asset name. Reruns update existing database/card/dashboard metadata and add any missing dashboard-card links instead of creating unbounded duplicates. This workflow was verified with `metabase/metabase:latest` resolving locally to Metabase `v0.61.3`.
+
+Metabase connects to PostgreSQL from inside Docker using host `postgres`. Host scripts call Metabase at `http://localhost:3000`.
+
+Useful environment overrides:
+
+```text
+METABASE_URL=http://localhost:3000
+METABASE_EMAIL=admin@retail-analytics.local
+METABASE_PASSWORD=RetailLocalAdmin!2026
+METABASE_POSTGRES_HOST=postgres
+METABASE_POSTGRES_PORT=5432
+METABASE_POSTGRES_DB=retail_warehouse
+METABASE_POSTGRES_USER=retail_user
+METABASE_POSTGRES_PASSWORD=retail_password
+```
+
+Representative marts checks run by `make metabase-smoke` through Metabase:
+
+```sql
+select count(*) as row_count from marts.fct_sales;
+select count(*) as row_count from marts.fct_order_items;
+select count(*) as row_count from marts.dim_customers;
+```
+
+To reset Metabase local state, run `make metabase-reset-note` for the reminder or reset Docker volumes with `docker compose down -v` / `make reset`. This deletes the local Metabase application database and requires provisioning again.
 
 ## Troubleshooting
 
@@ -180,6 +240,21 @@ docker compose exec airflow-webserver dbt --version
 ```
 
 If dbt cannot connect from an Airflow task, confirm the task is using target `docker` and the `postgres` service hostname, not `localhost`.
+
+### Metabase provisioning fails
+
+Confirm services are running and Metabase is reachable:
+
+```bash
+docker compose ps
+curl -fsS http://localhost:3000/api/session/properties
+```
+
+If login fails after a previous local setup, either export `METABASE_EMAIL` and `METABASE_PASSWORD` for the existing local admin account or reset the local Metabase volume with `docker compose down -v` / `make reset` and rerun `make metabase-provision`.
+
+If Metabase cannot connect to PostgreSQL, keep `METABASE_POSTGRES_HOST=postgres`; `localhost` is only correct for host-side PostgreSQL clients, not for Metabase running inside Docker Compose.
+
+If `make metabase-smoke` reports representative queries returning zero rows, run the full ELT path first (`make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01` or `make raw-pipeline && make dbt-run && make dbt-test`).
 
 ### Airflow dependency conflicts
 

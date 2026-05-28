@@ -4,8 +4,9 @@ AIRFLOW_DAG_ID ?= retail_batch_elt
 AIRFLOW_RUN_DATE ?= 2024-01-01
 AIRFLOW_TASK_ID ?= dbt_debug
 AIRFLOW_RUN_ID ?= manual__$(shell date +%Y%m%dT%H%M%S)
+METABASE_SCRIPT := python scripts/provision_metabase.py
 
-.PHONY: up down reset generate-data validate-data load-raw raw-pipeline test airflow-logs airflow-shell airflow-dags airflow-unpause airflow-trigger airflow-dag-test airflow-task-test airflow-run-local dbt-deps dbt-debug dbt-run dbt-test dbt-docs-generate dbt-docs-serve
+.PHONY: up down reset generate-data validate-data load-raw raw-pipeline test airflow-logs airflow-shell airflow-dags airflow-unpause airflow-trigger airflow-dag-test airflow-task-test airflow-run-local dbt-deps dbt-debug dbt-run dbt-test dbt-docs-generate dbt-docs-serve metabase-provision metabase-smoke metabase-reset-note
 
 up:
 	docker compose up -d
@@ -73,3 +74,12 @@ dbt-docs-generate:
 
 dbt-docs-serve:
 	dbt docs serve $(DBT_FLAGS)
+
+metabase-provision:
+	$(METABASE_SCRIPT) provision
+
+metabase-smoke:
+	$(METABASE_SCRIPT) smoke
+
+metabase-reset-note:
+	@echo "Metabase stores local state in the Docker volume metabase_data. Run 'docker compose down -v' or 'make reset' to reset it."

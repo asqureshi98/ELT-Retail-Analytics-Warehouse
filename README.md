@@ -29,6 +29,13 @@ Sprint 3 adds Airflow orchestration for the complete local ELT path:
 - Container-safe dbt execution from `/opt/airflow/project/dbt/retail_warehouse` against the Docker Compose `postgres` service
 - Headless Make targets for listing, testing, triggering, and unpausing the Airflow DAG
 
+Sprint 4 adds a local-first Metabase BI layer:
+
+- Dashboard and metric catalog in `docs/bi_dashboard_catalog.md`
+- Idempotent Metabase API provisioning via `scripts/provision_metabase.py`
+- `Retail Analytics` collection with executive, product/category, store/channel, customer, returns/refunds, and inventory health dashboards
+- Headless Make targets for provisioning and API smoke verification
+
 ## Tech Stack
 
 - PostgreSQL 16
@@ -82,6 +89,13 @@ make airflow-dags
 make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01
 ```
 
+To provision the Sprint 4 Metabase BI dashboards after marts are built:
+
+```bash
+make metabase-provision
+make metabase-smoke
+```
+
 For a scheduler-managed run instead of a one-shot local DAG test:
 
 ```bash
@@ -101,6 +115,13 @@ Default Airflow user created by the compose init task:
 ```text
 username: admin
 password: admin
+```
+
+Default Metabase local admin created by `make metabase-provision` on first run:
+
+```text
+email: admin@retail-analytics.local
+password: RetailLocalAdmin!2026
 ```
 
 ## Data Files
@@ -145,6 +166,54 @@ make dbt-debug      # validate dbt profile/project connectivity
 make dbt-run        # build staging, intermediate, and marts models
 make dbt-test       # run dbt source/model/business-rule tests
 make dbt-docs-generate # generate dbt documentation artifacts
+make metabase-provision # create/update local Metabase collection, cards, and dashboards
+make metabase-smoke # verify expected Metabase BI assets and representative marts data
+make metabase-reset-note # print the local Metabase volume reset note
+```
+
+## Sprint 4 Metabase BI
+
+The Sprint 4 BI layer is defined in `docs/bi_dashboard_catalog.md` and provisioned through the Metabase HTTP API without browser clicks.
+
+Provisioned dashboards in the `Retail Analytics` collection:
+
+- Executive Sales Overview
+- Product and Category Performance
+- Store and Channel Performance
+- Customer Behavior
+- Returns and Refunds
+- Inventory Health
+
+Typical local flow:
+
+```bash
+make up
+make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01
+make metabase-provision
+make metabase-smoke
+```
+
+If you prefer to run the pipeline outside Airflow, replace the DAG test with:
+
+```bash
+make raw-pipeline
+make dbt-run
+make dbt-test
+```
+
+`make metabase-smoke` checks that the Metabase database connection, collection, dashboards, and cards exist, then executes representative SQL against `marts.fct_sales`, `marts.fct_order_items`, and `marts.dim_customers` through the Metabase API.
+
+Metabase provisioning environment overrides:
+
+```text
+METABASE_URL=http://localhost:3000
+METABASE_EMAIL=admin@retail-analytics.local
+METABASE_PASSWORD=RetailLocalAdmin!2026
+METABASE_POSTGRES_HOST=postgres
+METABASE_POSTGRES_PORT=5432
+METABASE_POSTGRES_DB=retail_warehouse
+METABASE_POSTGRES_USER=retail_user
+METABASE_POSTGRES_PASSWORD=retail_password
 ```
 
 ## Full Airflow ELT DAG
@@ -159,4 +228,4 @@ Inside Airflow containers, generated CSVs land in `/tmp/retail-analytics-warehou
 
 ## Current Status
 
-Sprint 1, Sprint 2, and Sprint 3 files are implemented. Later sprints will add Metabase dashboards and any production hardening beyond the local Docker Compose workflow.
+Sprint 1, Sprint 2, Sprint 3, and Sprint 4 files are implemented. Later sprints may add BI polish, production deployment hardening, or orchestration extensions beyond the local Docker Compose workflow.

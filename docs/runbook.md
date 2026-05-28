@@ -99,7 +99,46 @@ Default local credentials:
 admin / admin
 ```
 
-The Sprint 1 DAG runs the raw pipeline only. Sprint 2 dbt models are run manually with Makefile commands; Airflow dbt tasks are added in later sprints.
+The Sprint 3 DAG (`retail_batch_elt`) runs the full local ELT path:
+
+```text
+start -> generate_retail_data -> validate_source_files -> load_raw_to_postgres -> dbt_debug -> dbt_run -> dbt_test -> dbt_docs_generate -> end
+```
+
+Airflow mounts the repository at `/opt/airflow/project`. DAG runs use `/tmp/retail-analytics-warehouse/raw` as the container-local writable landing path for generated CSV files, so Airflow does not need write access to the host-owned `data/raw` directory. The dbt tasks run with `DBT_PROFILES_DIR=/opt/airflow/project/dbt/retail_warehouse`, `--project-dir /opt/airflow/project/dbt/retail_warehouse`, `--profiles-dir /opt/airflow/project/dbt/retail_warehouse`, and `--target docker`, which uses the Docker-network `postgres` hostname. dbt logs and compiled artifacts are written under `/tmp/retail-analytics-warehouse/dbt-logs` and `/tmp/retail-analytics-warehouse/dbt-target` inside the container to avoid host/container ownership conflicts in the bind-mounted repository.
+
+Headless Airflow checks and runs:
+
+```bash
+make airflow-dags
+make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01
+make airflow-task-test AIRFLOW_TASK_ID=dbt_debug AIRFLOW_RUN_DATE=2024-01-01
+```
+
+Use the scheduler for a normal manual run:
+
+```bash
+make airflow-unpause
+make airflow-trigger
+make airflow-logs
+```
+
+If this Hermes session cannot access Docker directly, wrap service commands with the Docker group helper:
+
+```bash
+sg docker -c 'make up'
+sg docker -c 'make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01'
+sg docker -c 'docker compose down'
+```
+
+Expected success checks after a full DAG run:
+
+```sql
+select count(*) from raw.orders;
+select count(*) from audit.file_loads;
+select count(*) from marts.fct_sales;
+select count(*) from marts.dim_customers;
+```
 
 ## Metabase
 
@@ -130,6 +169,17 @@ python scripts/validate_source_files.py --input-dir data/raw
 ```
 
 Read the listed missing file, missing column, relationship, or numeric-rule error.
+
+### Airflow DAG import or dbt task fails
+
+Check the container can see the DAG and dbt installation:
+
+```bash
+make airflow-dags
+docker compose exec airflow-webserver dbt --version
+```
+
+If dbt cannot connect from an Airflow task, confirm the task is using target `docker` and the `postgres` service hostname, not `localhost`.
 
 ### Airflow dependency conflicts
 

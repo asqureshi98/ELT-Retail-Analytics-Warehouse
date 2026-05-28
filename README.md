@@ -23,6 +23,12 @@ Sprint 2 adds dbt Core warehouse modeling:
 - marts dimensions and facts in the `marts` schema
 - dbt schema tests plus a custom order-total business-rule test
 
+Sprint 3 adds Airflow orchestration for the complete local ELT path:
+
+- Airflow DAG chain: generate source CSVs in a container-local writable landing path, validate files, load raw tables, run `dbt debug`, `dbt run`, `dbt test`, and generate dbt docs
+- Container-safe dbt execution from `/opt/airflow/project/dbt/retail_warehouse` against the Docker Compose `postgres` service
+- Headless Make targets for listing, testing, triggering, and unpausing the Airflow DAG
+
 ## Tech Stack
 
 - PostgreSQL 16
@@ -67,6 +73,21 @@ To build and test the Sprint 2 dbt warehouse models after raw data is loaded:
 make dbt-debug
 make dbt-run
 make dbt-test
+```
+
+To run the Sprint 3 full Airflow ELT orchestration after services are up:
+
+```bash
+make airflow-dags
+make airflow-dag-test AIRFLOW_RUN_DATE=2024-01-01
+```
+
+For a scheduler-managed run instead of a one-shot local DAG test:
+
+```bash
+make airflow-unpause
+make airflow-trigger
+make airflow-logs
 ```
 
 ## Local UIs
@@ -115,12 +136,27 @@ make validate-data  # validate source CSVs
 make load-raw       # load CSVs to PostgreSQL raw schema
 make raw-pipeline   # generate, validate, and load
 make test           # run pytest tests
+make airflow-dags   # list Airflow DAGs from the container
+make airflow-dag-test # run retail_batch_elt once with airflow dags test
+make airflow-task-test AIRFLOW_TASK_ID=dbt_run # test one task headlessly
+make airflow-trigger # trigger a scheduler-managed DAG run
+make airflow-unpause # unpause the retail_batch_elt DAG
 make dbt-debug      # validate dbt profile/project connectivity
 make dbt-run        # build staging, intermediate, and marts models
 make dbt-test       # run dbt source/model/business-rule tests
 make dbt-docs-generate # generate dbt documentation artifacts
 ```
 
+## Full Airflow ELT DAG
+
+The `retail_batch_elt` DAG now orchestrates the full Sprint 3 chain:
+
+```text
+start -> generate_retail_data -> validate_source_files -> load_raw_to_postgres -> dbt_debug -> dbt_run -> dbt_test -> dbt_docs_generate -> end
+```
+
+Inside Airflow containers, generated CSVs land in `/tmp/retail-analytics-warehouse/raw` so DAG runs do not need write access to the host-owned `data/raw` directory. dbt runs with `DBT_PROFILES_DIR=/opt/airflow/project/dbt/retail_warehouse`, `--project-dir /opt/airflow/project/dbt/retail_warehouse`, `--profiles-dir /opt/airflow/project/dbt/retail_warehouse`, and `--target docker` so the profile connects to the Docker Compose `postgres` hostname. Airflow dbt tasks also send dbt logs and compiled artifacts to `/tmp/retail-analytics-warehouse/dbt-logs` and `/tmp/retail-analytics-warehouse/dbt-target` to avoid host/container ownership conflicts in the bind-mounted project tree.
+
 ## Current Status
 
-Sprint 1 and Sprint 2 files are implemented. Later sprints will add full Airflow dbt orchestration and Metabase dashboards.
+Sprint 1, Sprint 2, and Sprint 3 files are implemented. Later sprints will add Metabase dashboards and any production hardening beyond the local Docker Compose workflow.

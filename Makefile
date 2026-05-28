@@ -1,6 +1,11 @@
 PROJECT_DIR := $(shell pwd)
+AIRFLOW_SERVICE ?= airflow-webserver
+AIRFLOW_DAG_ID ?= retail_batch_elt
+AIRFLOW_RUN_DATE ?= 2024-01-01
+AIRFLOW_TASK_ID ?= dbt_debug
+AIRFLOW_RUN_ID ?= manual__$(shell date +%Y%m%dT%H%M%S)
 
-.PHONY: up down reset generate-data validate-data load-raw raw-pipeline test airflow-logs airflow-shell airflow-dags dbt-deps dbt-debug dbt-run dbt-test dbt-docs-generate dbt-docs-serve
+.PHONY: up down reset generate-data validate-data load-raw raw-pipeline test airflow-logs airflow-shell airflow-dags airflow-unpause airflow-trigger airflow-dag-test airflow-task-test airflow-run-local dbt-deps dbt-debug dbt-run dbt-test dbt-docs-generate dbt-docs-serve
 
 up:
 	docker compose up -d
@@ -33,7 +38,21 @@ airflow-shell:
 	docker compose exec airflow-webserver bash
 
 airflow-dags:
-	docker compose exec airflow-webserver airflow dags list
+	docker compose exec $(AIRFLOW_SERVICE) airflow dags list
+
+airflow-unpause:
+	docker compose exec $(AIRFLOW_SERVICE) airflow dags unpause $(AIRFLOW_DAG_ID)
+
+airflow-trigger:
+	docker compose exec $(AIRFLOW_SERVICE) airflow dags trigger $(AIRFLOW_DAG_ID) --run-id $(AIRFLOW_RUN_ID)
+
+airflow-dag-test:
+	docker compose exec $(AIRFLOW_SERVICE) airflow dags test $(AIRFLOW_DAG_ID) $(AIRFLOW_RUN_DATE)
+
+airflow-task-test:
+	docker compose exec $(AIRFLOW_SERVICE) airflow tasks test $(AIRFLOW_DAG_ID) $(AIRFLOW_TASK_ID) $(AIRFLOW_RUN_DATE)
+
+airflow-run-local: airflow-dag-test
 
 DBT_FLAGS := --profiles-dir ./dbt/retail_warehouse --project-dir ./dbt/retail_warehouse
 

@@ -1,0 +1,21 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+
+# Generated data and local runtime state
+data/raw/*.csv
+data/generated/*.csv
+data/archive/*.csv
+airflow/logs/
+logs/
+
+# dbt generated artifacts
+dbt/retail_warehouse/target/
+dbt/retail_warehouse/dbt_packages/
+
+# Local BI/database state
+metabase-data/
+postgres-data/

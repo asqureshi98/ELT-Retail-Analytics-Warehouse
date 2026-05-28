@@ -19,3 +19,6 @@ dbt/retail_warehouse/dbt_packages/
 # Local BI/database state
 metabase-data/
 postgres-data/
+
+# dbt local user state
+dbt/retail_warehouse/.user.yml

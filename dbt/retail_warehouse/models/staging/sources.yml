@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    description: "Source-shaped tables loaded from local CSV files."
+    tables:
+      - name: customers
+      - name: products
+      - name: stores
+      - name: promotions
+      - name: orders
+      - name: order_items
+      - name: payments
+      - name: inventory
+      - name: returns

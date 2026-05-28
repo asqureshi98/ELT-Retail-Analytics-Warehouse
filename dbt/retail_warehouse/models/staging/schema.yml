@@ -1,0 +1,102 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Cleaned customers from raw source with cast types."
+    columns:
+      - name: customer_id
+        data_tests:
+          - not_null
+          - unique
+      - name: gender
+        data_tests:
+          - accepted_values:
+              values: ['female', 'male', 'non_binary', 'prefer_not_to_say']
+
+  - name: stg_products
+    description: "Cleaned products from raw source with cast types."
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_stores
+    description: "Cleaned stores from raw source with cast types."
+    columns:
+      - name: store_id
+        data_tests:
+          - not_null
+          - unique
+      - name: channel
+        data_tests:
+          - accepted_values:
+              values: ['online', 'physical', 'marketplace']
+
+  - name: stg_promotions
+    description: "Cleaned promotions from raw source with cast types."
+    columns:
+      - name: promotion_id
+        data_tests:
+          - not_null
+          - unique
+      - name: promotion_type
+        data_tests:
+          - accepted_values:
+              values: ['percentage', 'fixed_amount', 'bogo']
+
+  - name: stg_orders
+    description: "Cleaned orders from raw source with cast types and normalized promotion_id."
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - unique
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              values: ['completed', 'cancelled', 'returned']
+
+  - name: stg_order_items
+    description: "Cleaned order items from raw source with cast types."
+    columns:
+      - name: order_item_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_payments
+    description: "Cleaned payments from raw source with cast types."
+    columns:
+      - name: payment_id
+        data_tests:
+          - not_null
+          - unique
+      - name: payment_method
+        data_tests:
+          - accepted_values:
+              values: ['card', 'cash', 'wallet', 'bank_transfer']
+      - name: payment_status
+        data_tests:
+          - accepted_values:
+              values: ['paid', 'failed', 'refunded']
+
+  - name: stg_inventory
+    description: "Cleaned inventory snapshots from raw source with cast types."
+    columns:
+      - name: inventory_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_returns
+    description: "Cleaned returns from raw source with cast types."
+    columns:
+      - name: return_id
+        data_tests:
+          - not_null
+          - unique
+      - name: return_reason
+        data_tests:
+          - accepted_values:
+              values: ['damaged', 'late', 'wrong_item', 'changed_mind']

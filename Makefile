@@ -1,6 +1,6 @@
 PROJECT_DIR := $(shell pwd)
 
-.PHONY: up down reset generate-data validate-data load-raw raw-pipeline test airflow-logs airflow-shell airflow-dags
+.PHONY: up down reset generate-data validate-data load-raw raw-pipeline test airflow-logs airflow-shell airflow-dags dbt-deps dbt-debug dbt-run dbt-test dbt-docs-generate dbt-docs-serve
 
 up:
 	docker compose up -d
@@ -34,3 +34,23 @@ airflow-shell:
 
 airflow-dags:
 	docker compose exec airflow-webserver airflow dags list
+
+DBT_FLAGS := --profiles-dir ./dbt/retail_warehouse --project-dir ./dbt/retail_warehouse
+
+dbt-deps:
+	dbt deps $(DBT_FLAGS)
+
+dbt-debug:
+	dbt debug $(DBT_FLAGS)
+
+dbt-run:
+	dbt run $(DBT_FLAGS)
+
+dbt-test:
+	dbt test $(DBT_FLAGS)
+
+dbt-docs-generate:
+	dbt docs generate $(DBT_FLAGS)
+
+dbt-docs-serve:
+	dbt docs serve $(DBT_FLAGS)

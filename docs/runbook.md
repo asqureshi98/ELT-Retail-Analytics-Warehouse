@@ -48,6 +48,30 @@ make raw-pipeline
 make test
 ```
 
+## Run dbt Warehouse Models
+
+Install Python dependencies and start/load PostgreSQL first:
+
+```bash
+python -m pip install -r requirements.txt
+make up
+make raw-pipeline
+```
+
+Then validate, build, and test dbt models from the repository root:
+
+```bash
+make dbt-debug
+make dbt-run
+make dbt-test
+```
+
+The committed `dbt/retail_warehouse/profiles.yml` uses local development defaults and can be overridden with `DBT_POSTGRES_HOST`, `DBT_POSTGRES_PORT`, `DBT_POSTGRES_DB`, `DBT_POSTGRES_USER`, `DBT_POSTGRES_PASSWORD`, and `DBT_POSTGRES_SCHEMA`. Use target `docker` from inside Docker-networked contexts if needed:
+
+```bash
+dbt run --profiles-dir ./dbt/retail_warehouse --project-dir ./dbt/retail_warehouse --target docker
+```
+
 ## Verify PostgreSQL Data
 
 After `make up` and `make load-raw`, connect to PostgreSQL and run:
@@ -73,7 +97,7 @@ Default local credentials:
 admin / admin
 ```
 
-The Sprint 1 DAG runs the raw pipeline only. dbt tasks are added in later sprints.
+The Sprint 1 DAG runs the raw pipeline only. Sprint 2 dbt models are run manually with Makefile commands; Airflow dbt tasks are added in later sprints.
 
 ## Metabase
 

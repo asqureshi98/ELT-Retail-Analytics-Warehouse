@@ -4,3 +4,5 @@ psycopg2-binary==2.9.9
 python-dotenv==1.2.2
 sqlalchemy==2.0.30
 pytest==8.2.2
+dbt-core==1.8.2
+dbt-postgres==1.8.2

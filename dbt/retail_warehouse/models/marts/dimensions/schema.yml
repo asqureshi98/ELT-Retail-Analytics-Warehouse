@@ -1,0 +1,62 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "Customer dimension with demographic attributes and derived age."
+    columns:
+      - name: customer_id
+        data_tests:
+          - not_null
+          - unique
+      - name: gender
+        data_tests:
+          - accepted_values:
+              values: ['female', 'male', 'non_binary', 'prefer_not_to_say']
+
+  - name: dim_products
+    description: "Product dimension with pricing and margin attributes."
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_stores
+    description: "Store dimension with channel and location attributes."
+    columns:
+      - name: store_id
+        data_tests:
+          - not_null
+          - unique
+      - name: channel
+        data_tests:
+          - accepted_values:
+              values: ['online', 'physical', 'marketplace']
+
+  - name: dim_promotions
+    description: "Promotion dimension with type, value, and date range."
+    columns:
+      - name: promotion_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_date
+    description: "Date spine from 2020-01-01 to 2030-12-31 with calendar attributes."
+    columns:
+      - name: date_day
+        data_tests:
+          - not_null
+          - unique
+      - name: year
+        data_tests:
+          - not_null
+      - name: quarter
+        data_tests:
+          - not_null
+      - name: month
+        data_tests:
+          - not_null
+      - name: is_weekend
+        data_tests:
+          - not_null

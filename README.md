@@ -2,7 +2,7 @@
 
 A local, production-style batch ELT warehouse for retail analytics using Docker Compose, PostgreSQL, Airflow, Python, and Metabase.
 
-## Sprint 1 Scope
+## Sprint Scope
 
 Sprint 1 implements the local foundation and raw ingestion pipeline:
 
@@ -15,12 +15,21 @@ Sprint 1 implements the local foundation and raw ingestion pipeline:
 - Makefile developer commands
 - Pytest coverage for generator and validator behavior
 
+Sprint 2 adds dbt Core warehouse modeling:
+
+- dbt project under `dbt/retail_warehouse`
+- raw source definitions and staging models for every raw table
+- intermediate sales/order item business logic models
+- marts dimensions and facts in the `marts` schema
+- dbt schema tests plus a custom order-total business-rule test
+
 ## Tech Stack
 
 - PostgreSQL 16
 - Apache Airflow 2.9.1 Python 3.11 image
 - Metabase latest
 - Python, pandas, Faker, psycopg2
+- dbt Core with the dbt-postgres adapter
 - Docker Compose
 
 ## Quick Start
@@ -50,6 +59,14 @@ Or run the full raw pipeline:
 
 ```bash
 make raw-pipeline
+```
+
+To build and test the Sprint 2 dbt warehouse models after raw data is loaded:
+
+```bash
+make dbt-debug
+make dbt-run
+make dbt-test
 ```
 
 ## Local UIs
@@ -98,8 +115,12 @@ make validate-data  # validate source CSVs
 make load-raw       # load CSVs to PostgreSQL raw schema
 make raw-pipeline   # generate, validate, and load
 make test           # run pytest tests
+make dbt-debug      # validate dbt profile/project connectivity
+make dbt-run        # build staging, intermediate, and marts models
+make dbt-test       # run dbt source/model/business-rule tests
+make dbt-docs-generate # generate dbt documentation artifacts
 ```
 
 ## Current Status
 
-Sprint 1 files are implemented. Later sprints will add dbt staging/intermediate/marts models, full Airflow dbt orchestration, and Metabase dashboards.
+Sprint 1 and Sprint 2 files are implemented. Later sprints will add full Airflow dbt orchestration and Metabase dashboards.

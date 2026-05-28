@@ -9,6 +9,18 @@ generate_retail_data.py
   -> audit.batch_runs + audit.file_loads
 ```
 
+## Sprint 2 dbt Transformation Pipeline
+
+```text
+raw PostgreSQL tables
+  -> dbt staging views
+  -> dbt intermediate views
+  -> dbt marts dimension/fact tables
+  -> dbt data tests and custom business-rule tests
+```
+
+dbt is intentionally manual in Sprint 2. Airflow continues to orchestrate only the raw pipeline until a later sprint wires dbt into the DAG.
+
 ## Steps
 
 1. Generate synthetic retail CSV files in `data/raw/`.
@@ -38,3 +50,4 @@ python scripts/generate_retail_data.py \
 - Validation exits non-zero when files are missing or invalid.
 - Raw loading exits non-zero on database or file load failure.
 - Failed loads update audit metadata where possible.
+- dbt parse/build/test exits non-zero when SQL, source references, relationships, accepted values, or custom business rules fail.

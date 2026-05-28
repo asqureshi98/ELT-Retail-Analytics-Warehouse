@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: int_order_items_enriched
+    description: "Order items enriched with product attributes and margin fields."
+    columns:
+      - name: order_item_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: int_orders_with_payment_status
+    description: "Orders enriched with payment status and return aggregates."
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - unique

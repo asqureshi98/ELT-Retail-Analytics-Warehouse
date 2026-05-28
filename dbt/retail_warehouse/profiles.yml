@@ -1,0 +1,21 @@
+retail_warehouse:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_POSTGRES_HOST', 'localhost') }}"
+      port: "{{ env_var('DBT_POSTGRES_PORT', 5432) | int }}"
+      dbname: "{{ env_var('DBT_POSTGRES_DB', 'retail_warehouse') }}"
+      user: "{{ env_var('DBT_POSTGRES_USER', 'retail_user') }}"
+      password: "{{ env_var('DBT_POSTGRES_PASSWORD', 'retail_password') }}"
+      schema: "{{ env_var('DBT_POSTGRES_SCHEMA', 'analytics') }}"
+      threads: 4
+    docker:
+      type: postgres
+      host: "{{ env_var('DBT_POSTGRES_HOST', 'postgres') }}"
+      port: "{{ env_var('DBT_POSTGRES_PORT', 5432) | int }}"
+      dbname: "{{ env_var('DBT_POSTGRES_DB', 'retail_warehouse') }}"
+      user: "{{ env_var('DBT_POSTGRES_USER', 'retail_user') }}"
+      password: "{{ env_var('DBT_POSTGRES_PASSWORD', 'retail_password') }}"
+      schema: "{{ env_var('DBT_POSTGRES_SCHEMA', 'analytics') }}"
+      threads: 4
